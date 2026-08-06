@@ -94,9 +94,27 @@ router.get('/:id', async(req,res)=>{
 try{
 
 const story = await Story.findById(req.params.id)
-.populate('author_id','profile_image bio name twitter email')
 .lean();
 
+if(!story)
+return res.status(404).json({
+  error:'Story not found'
+});
+
+await Story.findByIdAndUpdate(
+  req.params.id,
+  {
+    $inc:{
+      views:1
+    }
+  }
+);
+
+res.json({
+  ...story,
+  id: story._id,
+  created_at: story.createdAt
+});
 
 if(!story)
 return res.status(404).json({
