@@ -9,7 +9,7 @@ const {
   Subscriber,
   AuditLog
 } = require('../models');
-
+const sendNewsletter = require('../services/emailService');
 const {
   auth,
   requireRole
@@ -1276,7 +1276,105 @@ error:err.message
 
 
 
+// ================= NEWSLETTER =================
 
+
+// SEND NEWSLETTER TO ALL SUBSCRIBERS
+
+router.post(
+'/newsletter/send',
+auth,
+requireRole('Admin'),
+
+async(req,res)=>{
+
+
+try{
+
+
+const {
+subject,
+message
+}=req.body;
+
+
+
+if(!subject || !message)
+
+return res.status(400).json({
+error:'Subject and message required'
+});
+
+
+
+const subscribers =
+await Subscriber.find({})
+.select('email')
+.lean();
+
+
+
+const emails =
+subscribers.map(s=>s.email);
+
+
+
+if(emails.length===0)
+
+return res.status(400).json({
+error:'No subscribers found'
+});
+
+
+
+await sendNewsletter({
+
+emails,
+
+subject,
+
+html:message
+
+});
+
+
+
+await AuditLog.create({
+
+username:req.user.username,
+
+action:`Sent newsletter to ${emails.length} subscribers`
+
+});
+
+
+
+res.json({
+
+message:'Newsletter sent successfully',
+
+total:emails.length
+
+});
+
+
+}catch(err){
+
+
+console.log(err);
+
+
+res.status(500).json({
+
+error:err.message
+
+});
+
+
+}
+
+
+});
 
 
 
