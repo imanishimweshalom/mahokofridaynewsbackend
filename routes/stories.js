@@ -88,21 +88,31 @@ router.get('/stats/popular', async (req, res) => {
 
 
 // GET single story
+// GET single story
 router.get('/:id', async(req,res)=>{
 
 try{
 
-const story = await Story.findByIdAndUpdate(
-req.params.id,
-{$inc:{views:1}},
-{new:true}
-)
+const story = await Story.findById(req.params.id)
 .populate('author_id','profile_image bio name twitter email')
 .lean();
 
 
 if(!story)
-return res.status(404).json({error:'Story not found'});
+return res.status(404).json({
+  error:'Story not found'
+});
+
+
+// increase views
+await Story.findByIdAndUpdate(
+  req.params.id,
+  {
+    $inc:{
+      views:1
+    }
+  }
+);
 
 
 res.json({
@@ -117,7 +127,9 @@ created_at:story.createdAt
 
 }catch(err){
 
-res.status(500).json({error:err.message});
+res.status(500).json({
+  error:err.message
+});
 
 }
 

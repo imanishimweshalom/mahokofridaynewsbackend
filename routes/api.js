@@ -356,10 +356,54 @@ error:err.message
 
 
 
-
 // ================= COMMENTS =================
 
 
+// GET COMMENTS BY STORY
+
+router.get('/comments/story/:id', async(req,res)=>{
+
+try{
+
+const comments = await Comment.find({
+  story_id:req.params.id
+})
+.sort({
+  createdAt:-1
+})
+.lean();
+
+
+res.json(
+
+comments.map(c=>({
+
+...c,
+
+id:c._id,
+
+created_at:c.createdAt
+
+}))
+
+);
+
+
+}catch(err){
+
+res.status(500).json({
+error:err.message
+});
+
+}
+
+});
+
+
+
+
+
+// GET ALL COMMENTS ADMIN
 
 router.get('/comments',
 auth,
@@ -455,6 +499,9 @@ error:err.message
 
 
 
+
+// CREATE COMMENT
+
 router.post('/comments',
 async(req,res)=>{
 
@@ -494,7 +541,9 @@ name?.trim() || 'BANYA',
 email:email || '',
 
 comment:
-comment.trim()
+comment.trim(),
+
+status:'pending'
 
 });
 
@@ -519,7 +568,6 @@ error:err.message
 
 
 });
-
 
 
 
