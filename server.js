@@ -10,15 +10,29 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Security middleware
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
 const allowedOrigins = [
-  "http://localhost:3000",
-  "https://mahokofridaynews.onrender.com"
+  "https://mahokofridaynews.onrender.com",
+  "http://localhost:3000"
 ];
 
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
+  origin: function(origin, callback){
+
+    if(!origin) return callback(null, true);
+
+    if(allowedOrigins.includes(origin)){
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials:true
+}));
+app.options('*', cors());
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(helmet({
+  crossOriginResourcePolicy:false
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
