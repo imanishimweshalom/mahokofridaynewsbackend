@@ -1231,13 +1231,26 @@ try{
 
 const {subject,message}=req.body;
 
+
+console.log("SUBJECT:", subject);
+console.log("MESSAGE:", message);
+
+
 const subscribers = await Subscriber.find({
 active:true
 });
 
+
+console.log("SUBSCRIBERS:", subscribers);
+
+
 const emails = subscribers.map(
-subscriber=>subscriber.email
+subscriber => subscriber.email
 );
+
+
+console.log("EMAILS:", emails);
+
 
 
 await sendNewsletter({
@@ -1258,15 +1271,13 @@ sentTo:emails.length
 
 }catch(error){
 
+console.log(error);
+
 res.status(500).json({
-
 error:error.message
-
 });
 
 }
 
 });
-
-
 module.exports = router;
