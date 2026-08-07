@@ -12,7 +12,7 @@ const {
 
 const mongoose = require('mongoose');
 
-const sendNewsletter = require('../services/emailService');
+const sendNewsletter = require("../services/emailService");
 
 const {
   auth,
@@ -1223,7 +1223,54 @@ error:err.message
 });
 
 
+router.post("/newsletter/send", async(req,res)=>{
 
+try{
+
+const {subject,message}=req.body;
+
+
+const subscribers = await Subscriber.find({
+active:true
+});
+
+
+const emails = subscribers.map(
+subscriber=>subscriber.email
+);
+
+
+await sendNewsletter({
+
+emails,
+
+subject,
+
+html:message
+
+});
+
+
+res.status(200).json({
+
+message:"Newsletter sent successfully",
+
+sentTo:emails.length
+
+});
+
+
+}catch(error){
+
+res.status(500).json({
+
+error:error.message
+
+});
+
+}
+
+});
 
 
 
