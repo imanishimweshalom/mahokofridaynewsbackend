@@ -1223,46 +1223,31 @@ error:err.message
 });
 
 
+// ================= NEWSLETTER =================
+
 router.post("/newsletter/send", async(req,res)=>{
 
 try{
 
-console.log("NEWSLETTER REQUEST RECEIVED");
-
-console.log(req.body);
-
-
 const {subject,message}=req.body;
-
 
 const subscribers = await Subscriber.find({
 active:true
 });
-
-
-console.log("SUBSCRIBERS:", subscribers.length);
-
 
 const emails = subscribers.map(
 subscriber=>subscriber.email
 );
 
 
-console.log("EMAILS:", emails);
-
-
 await sendNewsletter({
-
 emails,
-
 subject,
-
 html:message
-
 });
 
 
-res.status(200).json({
+res.json({
 
 message:"Newsletter sent successfully",
 
@@ -1272,9 +1257,6 @@ sentTo:emails.length
 
 
 }catch(error){
-
-console.log("NEWSLETTER ERROR:", error);
-
 
 res.status(500).json({
 
