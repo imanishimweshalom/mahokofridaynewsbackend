@@ -16,251 +16,398 @@ const PORT = process.env.PORT || 5000;
 // ================= CORS =================
 
 const allowedOrigins = [
-  'https://mahokofridaynews.onrender.com',
-  'http://localhost:3000'
+  "https://mahokofridaynews.onrender.com",
+  "http://localhost:3000"
 ];
+
 
 app.use(
   cors({
+
     origin: function (origin, callback) {
 
-      // Allow server-to-server / Postman requests
+
+      // Allow Postman, mobile apps, server-to-server
       if (!origin) {
+
         return callback(null, true);
+
       }
+
 
       if (allowedOrigins.includes(origin)) {
+
         return callback(null, true);
+
       }
 
-      console.log('Blocked by CORS:', origin);
 
-      return callback(
-        new Error('CORS not allowed')
+      console.log(
+        "Blocked by CORS:",
+        origin
       );
+
+
+      return callback(null, false);
+
     },
 
-    credentials: true,
 
-    methods: [
-      'GET',
-      'POST',
-      'PUT',
-      'PATCH',
-      'DELETE',
-      'OPTIONS'
+    credentials:true,
+
+
+    methods:[
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS"
     ],
 
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization'
+
+    allowedHeaders:[
+      "Content-Type",
+      "Authorization"
     ]
+
   })
 );
+
+
+// allow preflight
+app.options(
+  "*",
+  cors()
+);
+
 
 
 // ================= SECURITY =================
 
+
 app.use(
+
   helmet({
-    crossOriginResourcePolicy: {
-      policy: 'cross-origin'
+
+    crossOriginResourcePolicy:{
+      policy:"cross-origin"
     }
+
   })
+
 );
+
 
 
 // ================= BODY =================
 
-app.use(
-  express.json({
-    limit: '10mb'
-  })
-);
 
 app.use(
-  express.urlencoded({
-    extended: true,
-    limit: '10mb'
+
+  express.json({
+
+    limit:"10mb"
+
   })
+
 );
+
+
+app.use(
+
+  express.urlencoded({
+
+    extended:true,
+
+    limit:"10mb"
+
+  })
+
+);
+
 
 
 // ================= RATE LIMIT =================
 
+
 const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 300,
-  message: {
-    error: 'Too many requests'
+
+  windowMs:60 * 1000,
+
+  max:300,
+
+  message:{
+    error:"Too many requests"
   }
+
 });
+
 
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: {
-    error: 'Too many login attempts. Try again later.'
+
+  windowMs:15 * 60 * 1000,
+
+  max:10,
+
+  message:{
+    error:"Too many login attempts. Try again later."
   }
+
 });
 
 
+
 app.use(
-  '/api/auth/login',
+  "/api/auth/login",
   loginLimiter
 );
 
 
 app.use(
-  '/api',
+  "/api",
   apiLimiter
 );
 
 
+
 // ================= FILE UPLOADS =================
 
+
 app.use(
-  '/uploads',
+
+  "/uploads",
+
   express.static(
-    path.join(__dirname, 'uploads')
+
+    path.join(
+      __dirname,
+      "uploads"
+    )
+
   )
+
 );
+
 
 
 // ================= HEALTH CHECK =================
 
+
 app.get(
-  '/health',
-  (req, res) => {
+  "/health",
+  (req,res)=>{
+
 
     res.status(200).json({
-      status: 'ok',
-      service: 'MFN Backend',
-      database: 'MongoDB',
-      time: new Date().toISOString()
+
+      status:"ok",
+
+      service:"MFN Backend",
+
+      database:"MongoDB",
+
+      time:new Date().toISOString()
+
     });
 
+
   }
+
 );
+
 
 
 // ================= ROUTES =================
 
-try {
 
-  app.use(
-    '/api/auth',
-    require('./routes/auth')
-  );
+try{
 
 
   app.use(
-    '/api/stories',
-    require('./routes/stories')
+
+    "/api/auth",
+
+    require("./routes/auth")
+
   );
+
 
 
   app.use(
-    '/api',
-    require('./routes/api')
+
+    "/api/stories",
+
+    require("./routes/stories")
+
   );
 
 
-} catch (error) {
+
+  app.use(
+
+    "/api",
+
+    require("./routes/api")
+
+  );
+
+
+
+}catch(error){
+
 
   console.error(
-    'Route loading error:',
+
+    "Route loading error:",
+
     error
+
   );
+
 
 }
 
 
+
+
 // ================= 404 =================
 
+
 app.use(
-  (req, res) => {
 
-    res.status(404).json({
-      error: 'Route not found',
-      path: req.originalUrl
-    });
+(req,res)=>{
 
-  }
+
+  res.status(404).json({
+
+    error:"Route not found",
+
+    path:req.originalUrl
+
+  });
+
+
+}
+
 );
+
+
 
 
 // ================= ERROR HANDLER =================
 
+
 app.use(
-  (err, req, res, next) => {
 
-    console.error(
-      'SERVER ERROR:',
-      err.stack || err
-    );
+(err,req,res,next)=>{
 
 
-    res.status(500).json({
+console.error(
 
-      error:
-        process.env.NODE_ENV === 'production'
-          ? 'Internal server error'
-          : err.message
+  "SERVER ERROR:",
 
-    });
+  err.stack || err
 
-  }
 );
+
+
+
+res.status(500).json({
+
+  error:
+
+  process.env.NODE_ENV === "production"
+
+  ? "Internal server error"
+
+  : err.message
+
+});
+
+
+}
+
+);
+
+
 
 
 // ================= START SERVER =================
 
-const start = async () => {
 
-  try {
-
-    console.log('Starting MFN Backend...');
+const start = async()=>{
 
 
-    console.log('Connecting to MongoDB...');
+try{
 
 
-    await connectDB();
+console.log(
+  "Starting MFN Backend..."
+);
+
+
+
+console.log(
+  "Connecting to MongoDB..."
+);
+
+
+
+await connectDB();
+
+
+
+console.log(
+  "MongoDB connected successfully"
+);
+
+
+
+app.listen(
+
+  PORT,
+
+  "0.0.0.0",
+
+  ()=>{
 
 
     console.log(
-      'MongoDB connected successfully'
+
+      `🚀 MFN Backend running on port ${PORT}`
+
     );
 
-
-    app.listen(
-      PORT,
-      '0.0.0.0',
-      () => {
-
-        console.log(
-          `🚀 MFN Backend running on port ${PORT}`
-        );
-
-      }
-    );
-
-
-  } catch (error) {
-
-    console.error(
-      '❌ Startup failed:',
-      error
-    );
-
-
-    process.exit(1);
 
   }
 
+);
+
+
+
+}catch(error){
+
+
+console.error(
+
+  "❌ Startup failed:",
+
+  error
+
+);
+
+
+
+process.exit(1);
+
+
+}
+
+
 };
+
 
 
 start();

@@ -9,7 +9,11 @@ const {
   Subscriber,
   AuditLog
 } = require('../models');
+
+const mongoose = require('mongoose');
+
 const sendNewsletter = require('../services/emailService');
+
 const {
   auth,
   requireRole
@@ -19,46 +23,129 @@ const upload = require('../middleware/upload');
 const uploadToCloudinary = require('../middleware/cloudinaryUpload');
 
 
-
 // ================= AUTHORS =================
 
 
-// GET AUTHORS
-router.get('/authors', async(req,res)=>{
+// GET ALL AUTHORS
+router.get('/authors', async (req, res) => {
+  try {
 
-try{
-
-const authors = await Author.find()
-.sort({name:1})
-.lean();
-
-
-const result = await Promise.all(
-authors.map(async a=>({
-
-...a,
-
-id:a._id,
-
-story_count:
-await Story.countDocuments({
-author_id:a._id
-})
-
-}))
-);
+    const authors = await Author.find()
+      .sort({ name: 1 })
+      .lean();
 
 
-res.json(result);
+    const result = await Promise.all(
+      authors.map(async (a) => ({
+        ...a,
+        id: a._id,
+        story_count: await Story.countDocuments({
+          author_id: a._id
+        })
+      }))
+    );
 
 
-}catch(err){
+    res.json(result);
 
-res.status(500).json({
-error:err.message
+
+  } catch (err) {
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
 });
 
-}
+
+
+
+// IMPORTANT: iyi route ijya mbere ya /authors/:id
+// GET STORIES BY AUTHOR
+
+router.get('/authors/:id/stories', async (req, res) => {
+
+  try {
+
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+
+      return res.status(400).json({
+        error: "Invalid author id"
+      });
+
+    }
+
+
+    const stories = await Story.find({
+
+      author_id: req.params.id,
+
+      status: "published"
+
+    })
+    .populate(
+      'author_id',
+      'profile_image bio name twitter'
+    )
+    .sort({
+      createdAt:-1
+    })
+    .lean();
+
+
+
+    res.json({
+
+      stories: stories.map(s => ({
+
+        ...s,
+
+        id:s._id,
+
+
+        author_avatar:
+        s.author_id?.profile_image ||
+        s.author_image ||
+        '',
+
+
+        author_bio_full:
+        s.author_id?.bio ||
+        s.author_bio ||
+        '',
+
+
+        author_twitter:
+        s.author_id?.twitter ||
+        '',
+
+
+        created_at:
+        s.createdAt,
+
+
+        updated_at:
+        s.updatedAt
+
+      }))
+
+    });
+
+
+
+  } catch(err) {
+
+
+    res.status(500).json({
+
+      error:err.message
+
+    });
+
+
+  }
 
 });
 
@@ -67,32 +154,45 @@ error:err.message
 
 // GET SINGLE AUTHOR
 
-router.get('/authors/:id',async(req,res)=>{
+router.get('/authors/:id', async(req,res)=>{
 
 try{
+
 
 const author =
 await Author.findById(req.params.id)
 .lean();
 
 
+
 if(!author)
+
 return res.status(404).json({
-error:'Not found'
+
+error:"Author not found"
+
 });
+
 
 
 res.json({
+
 ...author,
+
 id:author._id
+
 });
+
 
 
 }catch(err){
 
 res.status(500).json({
+
 error:err.message
+
 });
+
 
 }
 
@@ -102,7 +202,7 @@ error:err.message
 
 
 
-// CREATE AUTHOR CLOUDINARY
+// CREATE AUTHOR
 
 router.post(
 '/authors',
@@ -131,8 +231,7 @@ let profile_image='';
 
 if(req.file){
 
-
-const uploadResult =
+const result =
 await uploadToCloudinary(
 req.file.buffer,
 'authors'
@@ -140,8 +239,7 @@ req.file.buffer,
 
 
 profile_image =
-uploadResult.secure_url;
-
+result.secure_url;
 
 }
 
@@ -165,6 +263,7 @@ profile_image
 
 
 
+
 await AuditLog.create({
 
 username:req.user.username,
@@ -175,11 +274,12 @@ action:`Created author: ${name}`
 
 
 
+
 res.status(201).json({
 
 id:author._id,
 
-message:'Author created'
+message:"Author created"
 
 });
 
@@ -187,195 +287,40 @@ message:'Author created'
 
 }catch(err){
 
-res.status(500).json({
-error:err.message
-});
-
-}
-
-
-});
-
-
-
-
-
-
-
-// UPDATE AUTHOR
-
-router.put(
-'/authors/:id',
-auth,
-requireRole('Admin','Editor'),
-upload.single('profile_image'),
-
-async(req,res)=>{
-
-
-try{
-
-
-const existing =
-await Author.findById(req.params.id);
-
-
-
-if(!existing)
-
-return res.status(404).json({
-error:'Not found'
-});
-
-
-
-const {
-name,
-bio,
-email,
-twitter
-}=req.body;
-
-
-
-let profile_image =
-existing.profile_image;
-
-
-
-
-if(req.file){
-
-
-const uploadResult =
-await uploadToCloudinary(
-req.file.buffer,
-'authors'
-);
-
-
-profile_image =
-uploadResult.secure_url;
-
-
-}
-
-
-
-await Author.findByIdAndUpdate(
-
-req.params.id,
-
-{
-
-name,
-
-bio,
-
-email,
-
-twitter,
-
-profile_image
-
-}
-
-);
-
-
-
-res.json({
-
-message:'Author updated'
-
-});
-
-
-
-}catch(err){
 
 res.status(500).json({
+
 error:err.message
+
 });
+
 
 }
 
 });
-
-
-
-
-
-
-
-
-// DELETE AUTHOR
-
-router.delete(
-'/authors/:id',
-auth,
-requireRole('Admin'),
-
-async(req,res)=>{
-
-try{
-
-
-await Author.findByIdAndDelete(
-req.params.id
-);
-
-
-
-await AuditLog.create({
-
-username:req.user.username,
-
-action:`Deleted author ID: ${req.params.id}`
-
-});
-
-
-
-res.json({
-message:'Deleted'
-});
-
-
-}catch(err){
-
-res.status(500).json({
-error:err.message
-});
-
-}
-
-});
-
-
-
-
 
 // ================= COMMENTS =================
 
 
 // GET COMMENTS BY STORY
-
 router.get('/comments/story/:id', async(req,res)=>{
 
 try{
 
+
 const comments = await Comment.find({
-  story_id:req.params.id
+
+story_id:req.params.id
+
 })
 .sort({
-  createdAt:-1
+createdAt:-1
 })
 .lean();
 
 
-res.json(
 
+res.json(
 comments.map(c=>({
 
 ...c,
@@ -385,20 +330,21 @@ id:c._id,
 created_at:c.createdAt
 
 }))
-
 );
+
 
 
 }catch(err){
 
 res.status(500).json({
+
 error:err.message
+
 });
 
 }
 
 });
-
 
 
 
@@ -409,15 +355,19 @@ router.get('/comments',
 auth,
 async(req,res)=>{
 
-
 try{
 
 
 const {
+
 status='pending',
+
 story_id,
+
 page=1,
+
 limit=20
+
 }=req.query;
 
 
@@ -427,17 +377,19 @@ const query={};
 
 
 if(status)
+
 query.status=status;
 
 
+
 if(story_id)
+
 query.story_id=story_id;
 
 
 
 const skip =
-(parseInt(page)-1)
-*
+(parseInt(page)-1) *
 parseInt(limit);
 
 
@@ -474,8 +426,7 @@ id:c._id,
 story_title:
 c.story_id?.title || '',
 
-created_at:
-c.createdAt
+created_at:c.createdAt
 
 }))
 
@@ -486,16 +437,15 @@ c.createdAt
 }catch(err){
 
 res.status(500).json({
+
 error:err.message
+
 });
 
 }
 
 
 });
-
-
-
 
 
 
@@ -505,16 +455,21 @@ error:err.message
 router.post('/comments',
 async(req,res)=>{
 
-
 try{
 
 
 const {
+
 story_id,
+
 parent_id,
+
 name,
+
 email,
+
 comment
+
 }=req.body;
 
 
@@ -522,12 +477,15 @@ comment
 if(!comment?.trim())
 
 return res.status(400).json({
-error:'Comment text required'
+
+error:"Comment text required"
+
 });
 
 
 
-const c =
+
+const newComment =
 await Comment.create({
 
 story_id,
@@ -536,14 +494,15 @@ parent_id:
 parent_id || null,
 
 name:
-name?.trim() || 'BANYA',
+name?.trim() || "BANYA",
 
-email:email || '',
+email:
+email || "",
 
 comment:
 comment.trim(),
 
-status:'pending'
+status:"pending"
 
 });
 
@@ -551,24 +510,27 @@ status:'pending'
 
 res.status(201).json({
 
-id:c._id,
+id:newComment._id,
 
-message:'Comment submitted'
+message:"Comment submitted"
 
 });
+
 
 
 }catch(err){
 
+
 res.status(500).json({
+
 error:err.message
+
 });
+
 
 }
 
-
 });
-
 
 
 
@@ -577,20 +539,19 @@ error:err.message
 // ================= VIDEOS =================
 
 
-
-
 router.get('/videos',
 async(req,res)=>{
-
 
 try{
 
 
 const videos =
 await Video.find()
+
 .sort({
 createdAt:-1
 })
+
 .lean();
 
 
@@ -614,25 +575,25 @@ created_at:v.createdAt
 }catch(err){
 
 res.status(500).json({
+
 error:err.message
+
 });
 
 }
 
+
 });
 
 
 
 
 
-
-
-// CREATE VIDEO WITH CLOUDINARY THUMBNAIL
-
-
 router.post(
 '/videos',
+
 auth,
+
 requireRole('Admin','Editor'),
 
 upload.single('thumbnail'),
@@ -644,14 +605,18 @@ try{
 
 
 const {
+
 title,
+
 youtube_url,
+
 category
+
 }=req.body;
 
 
 
-let thumbnail='';
+let thumbnail="";
 
 
 
@@ -660,13 +625,15 @@ if(req.file){
 
 const result =
 await uploadToCloudinary(
+
 req.file.buffer,
+
 'videos'
+
 );
 
 
-thumbnail =
-result.secure_url;
+thumbnail=result.secure_url;
 
 
 }
@@ -674,9 +641,7 @@ result.secure_url;
 
 
 
-
-let embedUrl =
-youtube_url;
+let embedUrl=youtube_url;
 
 
 
@@ -684,8 +649,11 @@ if(youtube_url){
 
 
 const match =
+
 youtube_url.match(/[?&]v=([^?&]+)/)
+
 ||
+
 youtube_url.match(/youtu\.be\/([^?&]+)/);
 
 
@@ -700,7 +668,6 @@ embedUrl =
 
 
 
-
 const video =
 await Video.create({
 
@@ -710,8 +677,7 @@ youtube_url:embedUrl,
 
 thumbnail,
 
-category:
-category || 'General'
+category:category || "General"
 
 });
 
@@ -728,6 +694,7 @@ action:`Added video: ${title}`
 
 
 
+
 res.status(201).json({
 
 id:video._id
@@ -738,49 +705,53 @@ id:video._id
 
 }catch(err){
 
-
 res.status(500).json({
-error:err.message
-});
 
+error:err.message
+
+});
 
 }
 
 
 });
 
+
+
+
+
 // ================= ADS =================
 
 
-// GET ACTIVE ADS
-
-router.get('/ads', async(req,res)=>{
+router.get('/ads',
+async(req,res)=>{
 
 try{
 
 
-const {
-position
-}=req.query;
-
-
 const query={
+
 active:true
+
 };
 
 
-if(position)
 
-query.position=position;
+if(req.query.position)
+
+query.position=req.query.position;
 
 
 
 const ads =
 await Ad.find(query)
+
 .sort({
 createdAt:-1
 })
+
 .lean();
+
 
 
 
@@ -803,7 +774,9 @@ created_at:a.createdAt
 }catch(err){
 
 res.status(500).json({
+
 error:err.message
+
 });
 
 }
@@ -815,24 +788,20 @@ error:err.message
 
 
 
-
-
-// GET ALL ADS ADMIN
-
 router.get('/ads/all',
 auth,
-
 async(req,res)=>{
-
 
 try{
 
 
 const ads =
-await Ad.find({})
+await Ad.find()
+
 .sort({
 createdAt:-1
 })
+
 .lean();
 
 
@@ -856,7 +825,9 @@ created_at:a.createdAt
 }catch(err){
 
 res.status(500).json({
+
 error:err.message
+
 });
 
 }
@@ -869,13 +840,11 @@ error:err.message
 
 
 
-
-// CREATE AD WITH CLOUDINARY
-
-
 router.post(
 '/ads',
+
 auth,
+
 requireRole('Admin'),
 
 upload.single('file'),
@@ -887,24 +856,26 @@ try{
 
 
 const {
+
 type,
+
 link,
+
 position,
+
 text
+
 }=req.body;
 
 
 
-let file='';
+let file="";
 
-let cloudinary_public_id='';
-
-
+let cloudinary_public_id="";
 
 
 
 if(req.file){
-
 
 
 const result =
@@ -918,12 +889,9 @@ req.file.buffer,
 
 
 
-file =
-result.secure_url;
+file=result.secure_url;
 
-
-cloudinary_public_id =
-result.public_id;
+cloudinary_public_id=result.public_id;
 
 
 }
@@ -931,24 +899,20 @@ result.public_id;
 
 
 
-
 const ad =
 await Ad.create({
 
-type:type || 'image',
+type:type || "image",
 
 file,
 
 cloudinary_public_id,
 
-link:
-link || '#',
+link:link || "#",
 
-position:
-position || 'sidebar',
+position:position || "sidebar",
 
-text:
-text || '',
+text:text || "",
 
 active:true
 
@@ -957,15 +921,13 @@ active:true
 
 
 
-
 await AuditLog.create({
 
 username:req.user.username,
 
-action:'Created advertisement'
+action:"Created advertisement"
 
 });
-
 
 
 
@@ -974,16 +936,13 @@ res.status(201).json({
 
 id:ad._id,
 
-message:'Ad created'
+message:"Ad created"
 
 });
 
 
 
 }catch(err){
-
-
-console.log(err);
 
 
 res.status(500).json({
@@ -995,160 +954,22 @@ error:err.message
 
 }
 
-
 });
-
-
-
-
-
-
-
-
-// TOGGLE AD
-
-
-router.put(
-'/ads/:id/toggle',
-auth,
-requireRole('Admin'),
-
-async(req,res)=>{
-
-
-try{
-
-
-const ad =
-await Ad.findById(
-req.params.id
-);
-
-
-
-if(!ad)
-
-return res.status(404).json({
-
-error:'Not found'
-
-});
-
-
-
-ad.active =
-!ad.active;
-
-
-
-await ad.save();
-
-
-
-res.json({
-
-active:ad.active
-
-});
-
-
-
-}catch(err){
-
-res.status(500).json({
-
-error:err.message
-
-});
-
-}
-
-
-});
-
-
-
-
-
-
-
-
-
-// DELETE AD
-
-
-router.delete(
-'/ads/:id',
-auth,
-requireRole('Admin'),
-
-async(req,res)=>{
-
-
-try{
-
-
-await Ad.findByIdAndDelete(
-req.params.id
-);
-
-
-
-await AuditLog.create({
-
-username:req.user.username,
-
-action:`Deleted ad ID: ${req.params.id}`
-
-});
-
-
-
-res.json({
-
-message:'Deleted'
-
-});
-
-
-
-}catch(err){
-
-res.status(500).json({
-
-error:err.message
-
-});
-
-}
-
-
-});
-
-
-
-
-
-
-
-
 // ================= SUBSCRIBERS =================
 
 
-
-
-router.post(
-'/subscribe',
-
+router.post('/subscribe',
 async(req,res)=>{
-
 
 try{
 
 
 const {
+
 email,
+
 name
+
 }=req.body;
 
 
@@ -1157,19 +978,17 @@ if(!email)
 
 return res.status(400).json({
 
-message:'Email required'
+error:"Email required"
 
 });
 
 
 
-
 await Subscriber.create({
 
-email:
-email.toLowerCase().trim(),
+email:email.toLowerCase().trim(),
 
-name:name || ''
+name:name || ""
 
 });
 
@@ -1177,25 +996,24 @@ name:name || ''
 
 res.json({
 
-status:'success',
+status:"success",
 
-message:'Subscribed successfully'
+message:"Subscribed successfully"
 
 });
 
 
 
 }catch(err){
-
 
 
 if(err.code===11000)
 
 return res.json({
 
-status:'info',
+status:"info",
 
-message:'Already subscribed'
+message:"Already subscribed"
 
 });
 
@@ -1210,185 +1028,18 @@ error:err.message
 
 }
 
-
 });
 
 
-
-
-
-
-
-
-router.get(
-'/subscribers',
-
-auth,
-
-requireRole('Admin','Editor'),
-
-async(req,res)=>{
-
-
-try{
-
-
-const subs =
-await Subscriber.find({})
-.sort({
-createdAt:-1
-})
-.lean();
-
-
-
-res.json(
-
-subs.map(s=>({
-
-...s,
-
-id:s._id,
-
-subscribed_at:
-s.createdAt
-
-}))
-
-);
-
-
-
-}catch(err){
-
-res.status(500).json({
-
-error:err.message
-
-});
-
-}
-
-
-});
-
-
-
-
-
-// ================= NEWSLETTER =================
-
-
-// SEND NEWSLETTER TO ALL SUBSCRIBERS
-
-router.post(
-'/newsletter/send',
-auth,
-requireRole('Admin'),
-
-async(req,res)=>{
-
-
-try{
-
-
-const {
-subject,
-message
-}=req.body;
-
-
-
-if(!subject || !message)
-
-return res.status(400).json({
-error:'Subject and message required'
-});
-
-
-
-const subscribers =
-await Subscriber.find({})
-.select('email')
-.lean();
-
-
-
-const emails =
-subscribers.map(s=>s.email);
-
-
-
-if(emails.length===0)
-
-return res.status(400).json({
-error:'No subscribers found'
-});
-
-
-
-await sendNewsletter({
-
-emails,
-
-subject,
-
-html:message
-
-});
-
-
-
-await AuditLog.create({
-
-username:req.user.username,
-
-action:`Sent newsletter to ${emails.length} subscribers`
-
-});
-
-
-
-res.json({
-
-message:'Newsletter sent successfully',
-
-total:emails.length
-
-});
-
-
-}catch(err){
-
-
-console.log(err);
-
-
-res.status(500).json({
-
-error:err.message
-
-});
-
-
-}
-
-
-});
 
 
 
 // ================= ANALYTICS =================
 
 
-
-router.get(
-'/analytics/overview',
-
+router.get('/analytics/overview',
 auth,
-
 async(req,res)=>{
-
 
 try{
 
@@ -1405,16 +1056,14 @@ subscribers,
 
 trending
 
-
 ]=await Promise.all([
 
 
 Story.countDocuments({
 
-status:'published'
+status:"published"
 
 }),
-
 
 
 Story.aggregate([
@@ -1427,7 +1076,7 @@ _id:null,
 
 total:{
 
-$sum:'$views'
+$sum:"$views"
 
 }
 
@@ -1441,27 +1090,24 @@ $sum:'$views'
 
 Comment.countDocuments({
 
-status:'pending'
+status:"pending"
 
 }),
 
 
 
-Subscriber.countDocuments({}),
-
+Subscriber.countDocuments(),
 
 
 
 Story.find({
 
-status:'published'
+status:"published"
 
 })
 
 .select(
-
 'title category views'
-
 )
 
 .sort({
@@ -1475,10 +1121,7 @@ views:-1
 .lean()
 
 
-
 ]);
-
-
 
 
 
@@ -1487,19 +1130,13 @@ res.json({
 
 stories,
 
-views:
-
-views[0]?.total || 0,
+views:views[0]?.total || 0,
 
 pendingComments:comments,
 
 subscribers,
 
-trending:
-
-
-
-trending.map(s=>({
+trending:trending.map(s=>({
 
 ...s,
 
@@ -1508,13 +1145,11 @@ id:s._id
 }))
 
 
-
 });
 
 
 
 }catch(err){
-
 
 res.status(500).json({
 
@@ -1522,102 +1157,18 @@ error:err.message
 
 });
 
-
 }
 
-
 });
 
 
 
 
 
+// ================= BREAKING =================
 
 
-
-
-
-// ================= AUDIT LOGS =================
-
-
-
-router.get(
-
-'/audit-logs',
-
-auth,
-
-requireRole('Admin'),
-
-async(req,res)=>{
-
-
-try{
-
-
-const logs =
-
-await AuditLog.find({})
-
-.sort({
-
-createdAt:-1
-
-})
-
-.limit(100)
-
-.lean();
-
-
-
-
-res.json(
-
-logs.map(l=>({
-
-...l,
-
-id:l._id,
-
-created_at:l.createdAt
-
-}))
-
-);
-
-
-
-}catch(err){
-
-
-res.status(500).json({
-
-error:err.message
-
-});
-
-
-}
-
-
-});
-
-
-
-
-
-
-
-
-
-// ================= BREAKING NEWS =================
-
-
-
-router.get(
-'/breaking',
-
+router.get('/breaking',
 async(req,res)=>{
 
 
@@ -1625,10 +1176,9 @@ try{
 
 
 const stories =
-
 await Story.find({
 
-status:'published'
+status:"published"
 
 })
 
@@ -1661,20 +1211,16 @@ title:s.title
 
 }catch(err){
 
-
 res.status(500).json({
 
 error:err.message
 
 });
 
-
 }
 
 
 });
-
-
 
 
 
