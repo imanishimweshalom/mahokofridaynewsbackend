@@ -1227,6 +1227,11 @@ router.post("/newsletter/send", async(req,res)=>{
 
 try{
 
+console.log("NEWSLETTER REQUEST RECEIVED");
+
+console.log(req.body);
+
+
 const {subject,message}=req.body;
 
 
@@ -1235,9 +1240,15 @@ active:true
 });
 
 
+console.log("SUBSCRIBERS:", subscribers.length);
+
+
 const emails = subscribers.map(
 subscriber=>subscriber.email
 );
+
+
+console.log("EMAILS:", emails);
 
 
 await sendNewsletter({
@@ -1262,6 +1273,9 @@ sentTo:emails.length
 
 }catch(error){
 
+console.log("NEWSLETTER ERROR:", error);
+
+
 res.status(500).json({
 
 error:error.message
@@ -1269,14 +1283,6 @@ error:error.message
 });
 
 }
-
-});
-
-router.get("/newsletter/test",(req,res)=>{
-
-res.json({
-message:"Newsletter route exists"
-});
 
 });
 
