@@ -213,10 +213,6 @@ app.use(
 );
 
 
-app.use(
-  '/api',
-  require('./routes/api')
-);
 
 console.log('API routes loaded');
 // ================= 404 =================
