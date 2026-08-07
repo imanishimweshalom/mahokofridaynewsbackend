@@ -1272,7 +1272,13 @@ error:error.message
 
 });
 
+router.get("/newsletter/test",(req,res)=>{
 
+res.json({
+message:"Newsletter route exists"
+});
+
+});
 
 
 module.exports = router;
