@@ -63,7 +63,96 @@ router.get('/authors', async (req, res) => {
 
 // IMPORTANT: iyi route ijya mbere ya /authors/:id
 // GET STORIES BY AUTHOR
+// UPDATE AUTHOR
+router.put(
+  '/authors/:id',
+  auth,
+  requireRole('Admin', 'Editor'),
+  upload.single('profile_image'),
 
+  async (req, res) => {
+    try {
+
+      const { id } = req.params;
+
+      // Check valid MongoDB ObjectId
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+          error: 'Invalid author id'
+        });
+      }
+
+      const author = await Author.findById(id);
+
+      if (!author) {
+        return res.status(404).json({
+          error: 'Author not found'
+        });
+      }
+
+      const {
+        name,
+        bio,
+        email,
+        twitter,
+        portfolio,
+        website,
+        facebook,
+        instagram,
+        linkedin,
+        youtube
+      } = req.body;
+
+      // Update text fields only when provided
+      if (name !== undefined) author.name = name;
+      if (bio !== undefined) author.bio = bio;
+      if (email !== undefined) author.email = email;
+      if (twitter !== undefined) author.twitter = twitter;
+
+      if (portfolio !== undefined) author.portfolio = portfolio;
+      if (website !== undefined) author.website = website;
+      if (facebook !== undefined) author.facebook = facebook;
+      if (instagram !== undefined) author.instagram = instagram;
+      if (linkedin !== undefined) author.linkedin = linkedin;
+      if (youtube !== undefined) author.youtube = youtube;
+
+      // New profile image
+      if (req.file) {
+
+        const result = await uploadToCloudinary(
+          req.file.buffer,
+          'authors'
+        );
+
+        author.profile_image = result.secure_url;
+      }
+
+      await author.save();
+
+      await AuditLog.create({
+        username: req.user.username,
+        action: `Updated author: ${author.name}`
+      });
+
+      res.json({
+        message: 'Author updated successfully',
+        author: {
+          ...author.toObject(),
+          id: author._id
+        }
+      });
+
+    } catch (err) {
+
+      console.error('Update author error:', err);
+
+      res.status(500).json({
+        error: err.message
+      });
+
+    }
+  }
+);
 router.get('/authors/:id/stories', async (req, res) => {
 
   try {
