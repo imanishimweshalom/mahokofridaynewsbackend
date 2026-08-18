@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-/* =========================================================
-   AUTHOR
-========================================================= */
+
+// ============================================================
+// AUTHOR
+// ============================================================
 
 const authorSchema = new Schema(
   {
@@ -15,8 +16,7 @@ const authorSchema = new Schema(
 
     bio: {
       type: String,
-      default: '',
-      trim: true
+      default: ''
     },
 
     profile_image: {
@@ -27,11 +27,38 @@ const authorSchema = new Schema(
     email: {
       type: String,
       default: '',
-      trim: true,
-      lowercase: true
+      trim: true
     },
 
-    /* Social Media */
+    phone: {
+      type: String,
+      default: '',
+      trim: true
+    },
+
+    location: {
+      type: String,
+      default: '',
+      trim: true
+    },
+
+    specialization: {
+      type: String,
+      default: '',
+      trim: true
+    },
+
+    education: {
+      type: String,
+      default: ''
+    },
+
+    awards: {
+      type: String,
+      default: ''
+    },
+
+    // Social media
     twitter: {
       type: String,
       default: '',
@@ -68,7 +95,7 @@ const authorSchema = new Schema(
       trim: true
     },
 
-    /* Professional information */
+    // Portfolio / personal website
     website: {
       type: String,
       default: '',
@@ -79,72 +106,8 @@ const authorSchema = new Schema(
       type: String,
       default: '',
       trim: true
-    },
-
-    profession: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    organization: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    location: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    phone: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    /* Extra author information */
-    specialties: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    experience: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    education: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    awards: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    languages: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    is_verified: {
-      type: Boolean,
-      default: false
-    },
-
-    is_active: {
-      type: Boolean,
-      default: true
     }
+
   },
   {
     timestamps: true
@@ -152,9 +115,9 @@ const authorSchema = new Schema(
 );
 
 
-/* =========================================================
-   STORY
-========================================================= */
+// ============================================================
+// STORY
+// ============================================================
 
 const storySchema = new Schema(
   {
@@ -238,11 +201,7 @@ const storySchema = new Schema(
 
     status: {
       type: String,
-      enum: [
-        'published',
-        'draft',
-        'scheduled'
-      ],
+      enum: ['published', 'draft', 'scheduled'],
       default: 'published'
     },
 
@@ -266,6 +225,7 @@ const storySchema = new Schema(
   }
 );
 
+
 storySchema.index({ category: 1 });
 storySchema.index({ status: 1 });
 storySchema.index({ createdAt: -1 });
@@ -277,9 +237,9 @@ storySchema.index({
 });
 
 
-/* =========================================================
-   COMMENT
-========================================================= */
+// ============================================================
+// COMMENT
+// ============================================================
 
 const commentSchema = new Schema(
   {
@@ -312,11 +272,7 @@ const commentSchema = new Schema(
 
     status: {
       type: String,
-      enum: [
-        'pending',
-        'approved',
-        'spam'
-      ],
+      enum: ['pending', 'approved', 'spam'],
       default: 'pending'
     },
 
@@ -336,18 +292,15 @@ const commentSchema = new Schema(
 );
 
 
-/* =========================================================
-   AD
-========================================================= */
+// ============================================================
+// AD
+// ============================================================
 
 const adSchema = new Schema(
   {
     type: {
       type: String,
-      enum: [
-        'image',
-        'video'
-      ],
+      enum: ['image', 'video'],
       default: 'image'
     },
 
@@ -368,12 +321,7 @@ const adSchema = new Schema(
 
     position: {
       type: String,
-      enum: [
-        'top',
-        'sidebar',
-        'inline',
-        'popup'
-      ],
+      enum: ['top', 'sidebar', 'inline', 'popup'],
       default: 'sidebar'
     },
 
@@ -393,9 +341,9 @@ const adSchema = new Schema(
 );
 
 
-/* =========================================================
-   SUBSCRIBER
-========================================================= */
+// ============================================================
+// SUBSCRIBER
+// ============================================================
 
 const subscriberSchema = new Schema(
   {
@@ -414,10 +362,7 @@ const subscriberSchema = new Schema(
 
     status: {
       type: String,
-      enum: [
-        'active',
-        'unsubscribed'
-      ],
+      enum: ['active', 'unsubscribed'],
       default: 'active'
     }
   },
@@ -427,9 +372,9 @@ const subscriberSchema = new Schema(
 );
 
 
-/* =========================================================
-   VIDEO
-========================================================= */
+// ============================================================
+// VIDEO
+// ============================================================
 
 const videoSchema = new Schema(
   {
@@ -474,9 +419,9 @@ const videoSchema = new Schema(
 );
 
 
-/* =========================================================
-   ADMIN USER
-========================================================= */
+// ============================================================
+// ADMIN USER
+// ============================================================
 
 const adminUserSchema = new Schema(
   {
@@ -528,9 +473,9 @@ const adminUserSchema = new Schema(
 );
 
 
-/* =========================================================
-   AUDIT LOG
-========================================================= */
+// ============================================================
+// AUDIT LOG
+// ============================================================
 
 const auditLogSchema = new Schema(
   {
@@ -555,9 +500,9 @@ const auditLogSchema = new Schema(
 );
 
 
-/* =========================================================
-   EXPORT MODELS
-========================================================= */
+// ============================================================
+// EXPORT
+// ============================================================
 
 module.exports = {
   Author: mongoose.model('Author', authorSchema),
