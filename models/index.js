@@ -1,230 +1,240 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-
-// ============================================================
+// ======================================================
 // AUTHOR
-// ============================================================
-
+// ======================================================
 const authorSchema = new Schema(
   {
     name: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
 
     bio: {
       type: String,
-      default: ''
+      default: '',
+      trim: true,
     },
 
     profile_image: {
       type: String,
-      default: ''
+      default: '',
     },
 
     email: {
       type: String,
       default: '',
-      trim: true
+      trim: true,
     },
 
-    phone: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    location: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    specialization: {
-      type: String,
-      default: '',
-      trim: true
-    },
-
-    education: {
-      type: String,
-      default: ''
-    },
-
-    awards: {
-      type: String,
-      default: ''
-    },
-
-    // Social media
     twitter: {
       type: String,
       default: '',
-      trim: true
+      trim: true,
+    },
+
+    // Personal / Portfolio information
+    portfolio: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+
+    website: {
+      type: String,
+      default: '',
+      trim: true,
     },
 
     facebook: {
       type: String,
       default: '',
-      trim: true
+      trim: true,
     },
 
     instagram: {
       type: String,
       default: '',
-      trim: true
+      trim: true,
     },
 
     linkedin: {
       type: String,
       default: '',
-      trim: true
+      trim: true,
     },
 
     youtube: {
       type: String,
       default: '',
-      trim: true
+      trim: true,
     },
 
-    tiktok: {
+    // Optional extra information
+    phone: {
       type: String,
       default: '',
-      trim: true
+      trim: true,
     },
 
-    // Portfolio / personal website
-    website: {
+    location: {
       type: String,
       default: '',
-      trim: true
+      trim: true,
     },
 
-    portfolio: {
+    profession: {
       type: String,
       default: '',
-      trim: true
-    }
+      trim: true,
+    },
 
+    specialties: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+
+    awards: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+
+    experience: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+
+    // Author can have a personal portfolio website
+    portfolio_description: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+
+    active: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
 
-// ============================================================
+// ======================================================
 // STORY
-// ============================================================
-
+// ======================================================
 const storySchema = new Schema(
   {
     title: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
 
     slug: {
       type: String,
       unique: true,
-      sparse: true
+      sparse: true,
     },
 
     category: {
       type: String,
-      required: true
+      required: true,
     },
 
     subcategory: {
       type: String,
-      default: ''
+      default: '',
     },
 
     description: {
       type: String,
-      default: ''
+      default: '',
     },
 
     image: {
       type: String,
-      default: ''
+      default: '',
     },
 
     author: {
       type: String,
-      default: 'Editorial Team'
+      default: 'Editorial Team',
     },
 
     author_id: {
       type: Schema.Types.ObjectId,
       ref: 'Author',
-      default: null
+      default: null,
     },
 
     author_image: {
       type: String,
-      default: ''
+      default: '',
     },
 
     author_bio: {
       type: String,
-      default: ''
+      default: '',
     },
 
     tags: {
       type: String,
-      default: ''
+      default: '',
     },
 
     meta_description: {
       type: String,
-      default: ''
+      default: '',
     },
 
     views: {
       type: Number,
-      default: 0
+      default: 0,
     },
 
     likes: {
       type: Number,
-      default: 0
+      default: 0,
     },
 
     dislikes: {
       type: Number,
-      default: 0
+      default: 0,
     },
 
     status: {
       type: String,
       enum: ['published', 'draft', 'scheduled'],
-      default: 'published'
+      default: 'published',
     },
 
     scheduled_at: {
       type: Date,
-      default: null
+      default: null,
     },
 
     featured: {
       type: Boolean,
-      default: false
+      default: false,
     },
 
     cloudinary_public_id: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
-
 
 storySchema.index({ category: 1 });
 storySchema.index({ status: 1 });
@@ -233,118 +243,115 @@ storySchema.index({ views: -1 });
 
 storySchema.index({
   title: 'text',
-  description: 'text'
+  description: 'text',
 });
 
 
-// ============================================================
+// ======================================================
 // COMMENT
-// ============================================================
-
+// ======================================================
 const commentSchema = new Schema(
   {
     story_id: {
       type: Schema.Types.ObjectId,
       ref: 'Story',
-      required: true
+      required: true,
     },
 
     parent_id: {
       type: Schema.Types.ObjectId,
       ref: 'Comment',
-      default: null
+      default: null,
     },
 
     name: {
       type: String,
-      default: 'BANYA'
+      default: 'BANYA',
     },
 
     email: {
       type: String,
-      default: ''
+      default: '',
     },
 
     comment: {
       type: String,
-      required: true
+      required: true,
     },
 
     status: {
       type: String,
       enum: ['pending', 'approved', 'spam'],
-      default: 'pending'
+      default: 'pending',
     },
 
     likes: {
       type: Number,
-      default: 0
+      default: 0,
     },
 
     dislikes: {
       type: Number,
-      default: 0
-    }
+      default: 0,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
 
-// ============================================================
+// ======================================================
 // AD
-// ============================================================
-
+// ======================================================
 const adSchema = new Schema(
   {
     type: {
       type: String,
       enum: ['image', 'video'],
-      default: 'image'
+      default: 'image',
     },
 
     file: {
       type: String,
-      default: ''
+      default: '',
     },
 
     cloudinary_public_id: {
       type: String,
-      default: ''
+      default: '',
     },
 
     link: {
       type: String,
-      default: '#'
+      default: '#',
     },
 
     position: {
       type: String,
       enum: ['top', 'sidebar', 'inline', 'popup'],
-      default: 'sidebar'
+      default: 'sidebar',
     },
 
     text: {
       type: String,
-      default: ''
+      default: '',
     },
 
     active: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
 
-// ============================================================
+// ======================================================
 // SUBSCRIBER
-// ============================================================
-
+// ======================================================
 const subscriberSchema = new Schema(
   {
     email: {
@@ -352,94 +359,95 @@ const subscriberSchema = new Schema(
       unique: true,
       required: true,
       lowercase: true,
-      trim: true
+      trim: true,
     },
 
     name: {
       type: String,
-      default: ''
+      default: '',
     },
 
     status: {
       type: String,
       enum: ['active', 'unsubscribed'],
-      default: 'active'
-    }
+      default: 'active',
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
 
-// ============================================================
+// ======================================================
 // VIDEO
-// ============================================================
-
+// ======================================================
 const videoSchema = new Schema(
   {
     title: {
       type: String,
-      required: true
+      required: true,
+      trim: true,
     },
 
     youtube_url: {
       type: String,
-      default: ''
+      default: '',
     },
 
     video_url: {
       type: String,
-      default: ''
+      default: '',
     },
 
     thumbnail: {
       type: String,
-      default: ''
+      default: '',
     },
 
     cloudinary_public_id: {
       type: String,
-      default: ''
+      default: '',
     },
 
     category: {
       type: String,
-      default: 'General'
+      default: 'General',
     },
 
     views: {
       type: Number,
-      default: 0
-    }
+      default: 0,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
 
-// ============================================================
+// ======================================================
 // ADMIN USER
-// ============================================================
-
+// ======================================================
 const adminUserSchema = new Schema(
   {
     username: {
       type: String,
       unique: true,
-      required: true
+      required: true,
+      trim: true,
     },
 
     email: {
       type: String,
       unique: true,
-      sparse: true
+      sparse: true,
+      trim: true,
     },
 
     password: {
       type: String,
-      required: true
+      required: true,
     },
 
     role: {
@@ -448,62 +456,60 @@ const adminUserSchema = new Schema(
         'Admin',
         'Editor',
         'Journalist',
-        'Moderator'
+        'Moderator',
       ],
-      default: 'Journalist'
+      default: 'Journalist',
     },
 
     avatar: {
       type: String,
-      default: ''
+      default: '',
     },
 
     active: {
       type: Boolean,
-      default: true
+      default: true,
     },
 
     last_login: {
-      type: Date
-    }
+      type: Date,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
 
-// ============================================================
+// ======================================================
 // AUDIT LOG
-// ============================================================
-
+// ======================================================
 const auditLogSchema = new Schema(
   {
     username: {
       type: String,
-      default: ''
+      default: '',
     },
 
     action: {
       type: String,
-      default: ''
+      default: '',
     },
 
     ip_address: {
       type: String,
-      default: ''
-    }
+      default: '',
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
 
-// ============================================================
-// EXPORT
-// ============================================================
-
+// ======================================================
+// EXPORT MODELS
+// ======================================================
 module.exports = {
   Author: mongoose.model('Author', authorSchema),
   Story: mongoose.model('Story', storySchema),
@@ -512,5 +518,5 @@ module.exports = {
   Subscriber: mongoose.model('Subscriber', subscriberSchema),
   Video: mongoose.model('Video', videoSchema),
   AdminUser: mongoose.model('AdminUser', adminUserSchema),
-  AuditLog: mongoose.model('AuditLog', auditLogSchema)
+  AuditLog: mongoose.model('AuditLog', auditLogSchema),
 };
