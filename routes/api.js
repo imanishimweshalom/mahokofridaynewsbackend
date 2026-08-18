@@ -64,6 +64,9 @@ router.get('/authors', async (req, res) => {
 // IMPORTANT: iyi route ijya mbere ya /authors/:id
 // GET STORIES BY AUTHOR
 // UPDATE AUTHOR
+// ======================================================
+// UPDATE AUTHOR
+// ======================================================
 router.put(
   '/authors/:id',
   auth,
@@ -72,84 +75,158 @@ router.put(
 
   async (req, res) => {
     try {
-
       const { id } = req.params;
 
-      // Check valid MongoDB ObjectId
+      console.log('=================================');
+      console.log('UPDATE AUTHOR');
+      console.log('Author ID:', id);
+      console.log('Body:', req.body);
+      console.log('File:', req.file ? req.file.originalname : 'No file');
+      console.log('=================================');
+
+      // Check ObjectId
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({
-          error: 'Invalid author id'
+          success: false,
+          error: 'Invalid author id',
         });
       }
 
+      // Find author
       const author = await Author.findById(id);
 
       if (!author) {
         return res.status(404).json({
-          error: 'Author not found'
+          success: false,
+          error: 'Author not found',
         });
       }
 
-      const {
-        name,
-        bio,
-        email,
-        twitter,
-        portfolio,
-        website,
-        facebook,
-        instagram,
-        linkedin,
-        youtube
-      } = req.body;
+      // ==================================================
+      // UPDATE TEXT FIELDS
+      // ==================================================
 
-      // Update text fields only when provided
-      if (name !== undefined) author.name = name;
-      if (bio !== undefined) author.bio = bio;
-      if (email !== undefined) author.email = email;
-      if (twitter !== undefined) author.twitter = twitter;
+      const fields = [
+        'name',
+        'bio',
+        'email',
+        'twitter',
+        'portfolio',
+        'website',
+        'facebook',
+        'instagram',
+        'linkedin',
+        'youtube',
+        'phone',
+        'location',
+        'profession',
+        'specialties',
+        'awards',
+        'experience',
+        'portfolio_description',
+      ];
 
-      if (portfolio !== undefined) author.portfolio = portfolio;
-      if (website !== undefined) author.website = website;
-      if (facebook !== undefined) author.facebook = facebook;
-      if (instagram !== undefined) author.instagram = instagram;
-      if (linkedin !== undefined) author.linkedin = linkedin;
-      if (youtube !== undefined) author.youtube = youtube;
-
-      // New profile image
-      if (req.file) {
-
-        const result = await uploadToCloudinary(
-          req.file.buffer,
-          'authors'
-        );
-
-        author.profile_image = result.secure_url;
-      }
-
-      await author.save();
-
-      await AuditLog.create({
-        username: req.user.username,
-        action: `Updated author: ${author.name}`
-      });
-
-      res.json({
-        message: 'Author updated successfully',
-        author: {
-          ...author.toObject(),
-          id: author._id
+      fields.forEach((field) => {
+        if (req.body[field] !== undefined) {
+          author[field] = req.body[field];
         }
       });
 
-    } catch (err) {
+      // ==================================================
+      // PROFILE IMAGE
+      // ==================================================
 
-      console.error('Update author error:', err);
+      if (req.file) {
+        try {
+          const result = await uploadToCloudinary(
+            req.file.buffer,
+            'authors'
+          );
 
-      res.status(500).json({
-        error: err.message
+          if (!result || !result.secure_url) {
+            return res.status(500).json({
+              success: false,
+              error: 'Cloudinary did not return an image URL',
+            });
+          }
+
+          author.profile_image = result.secure_url;
+        } catch (uploadError) {
+          console.error(
+            'Cloudinary author image error:',
+            uploadError
+          );
+
+          return res.status(500).json({
+            success: false,
+            error: 'Failed to upload profile image',
+            details: uploadError.message,
+          });
+        }
+      }
+
+      // ==================================================
+      // VALIDATION
+      // ==================================================
+
+      if (!author.name || !author.name.trim()) {
+        return res.status(400).json({
+          success: false,
+          error: 'Author name is required',
+        });
+      }
+
+      // ==================================================
+      // SAVE
+      // ==================================================
+
+      await author.save();
+
+      // ==================================================
+      // AUDIT LOG
+      // ==================================================
+
+      try {
+        await AuditLog.create({
+          username: req.user?.username || 'Unknown',
+          action: `Updated author: ${author.name}`,
+          ip_address:
+            req.ip ||
+            req.headers['x-forwarded-for'] ||
+            '',
+        });
+      } catch (auditError) {
+        console.error(
+          'Audit log error:',
+          auditError.message
+        );
+      }
+
+      // ==================================================
+      // RESPONSE
+      // ==================================================
+
+      res.status(200).json({
+        success: true,
+        message: 'Author updated successfully',
+
+        author: {
+          ...author.toObject(),
+          id: author._id,
+        },
       });
 
+    } catch (err) {
+      console.error('=================================');
+      console.error('UPDATE AUTHOR ERROR');
+      console.error(err);
+      console.error('=================================');
+
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update author',
+        details: err.message,
+      });
     }
   }
 );
